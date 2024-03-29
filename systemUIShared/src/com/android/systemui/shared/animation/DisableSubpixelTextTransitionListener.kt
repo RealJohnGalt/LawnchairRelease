@@ -20,7 +20,6 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.view.forEach
 import com.android.systemui.unfold.UnfoldTransitionProgressProvider.TransitionProgressListener
-import com.android.systemui.util.traceSection
 import java.lang.ref.WeakReference
 
 /**
@@ -28,36 +27,27 @@ import java.lang.ref.WeakReference
  * during fold/unfold transitions.
  */
 class DisableSubpixelTextTransitionListener(private val rootView: ViewGroup?) :
-        TransitionProgressListener {
+    TransitionProgressListener {
     private val childrenTextViews: MutableList<WeakReference<TextView>> = mutableListOf()
     private var isTransitionInProgress: Boolean = false
 
     override fun onTransitionStarted() {
         isTransitionInProgress = true
-        traceSection("subpixelFlagSetForTextView") {
-            traceSection("subpixelFlagTraverseHierarchy") {
-                getAllChildTextView(rootView, childrenTextViews)
-            }
-            traceSection("subpixelFlagDisableForTextView") {
-                childrenTextViews.forEach { child ->
-                    val childTextView = child.get() ?: return@forEach
-                    childTextView.paintFlags = childTextView.paintFlags or Paint.SUBPIXEL_TEXT_FLAG
-                }
-            }
+        childrenTextViews.forEach { child ->
+            val childTextView = child.get() ?: return@forEach
+            childTextView.paintFlags = childTextView.paintFlags or Paint.SUBPIXEL_TEXT_FLAG
         }
     }
 
     override fun onTransitionFinished() {
         if (!isTransitionInProgress) return
         isTransitionInProgress = false
-        traceSection("subpixelFlagEnableForTextView") {
-            childrenTextViews.forEach { child ->
-                val childTextView = child.get() ?: return@forEach
-                childTextView.paintFlags =
-                        childTextView.paintFlags and Paint.SUBPIXEL_TEXT_FLAG.inv()
-            }
-            childrenTextViews.clear()
+        childrenTextViews.forEach { child ->
+            val childTextView = child.get() ?: return@forEach
+            childTextView.paintFlags =
+                childTextView.paintFlags and Paint.SUBPIXEL_TEXT_FLAG.inv()
         }
+        childrenTextViews.clear()
     }
 
     /**
@@ -67,8 +57,8 @@ class DisableSubpixelTextTransitionListener(private val rootView: ViewGroup?) :
      * @param childrenTextViews the list to store the retrieved TextView children
      */
     private fun getAllChildTextView(
-            parent: ViewGroup?,
-            childrenTextViews: MutableList<WeakReference<TextView>>
+        parent: ViewGroup?,
+        childrenTextViews: MutableList<WeakReference<TextView>>
     ) {
         parent?.forEach { child ->
             when (child) {

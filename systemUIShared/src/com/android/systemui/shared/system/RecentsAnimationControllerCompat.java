@@ -23,10 +23,8 @@ import android.view.SurfaceControl;
 import android.window.PictureInPictureSurfaceTransaction;
 import android.window.TaskSnapshot;
 
+import com.android.internal.os.IResultReceiver;
 import com.android.systemui.shared.recents.model.ThumbnailData;
-
-import app.lawnchair.compat.LawnchairQuickstepCompat;
-import app.lawnchair.compatlib.eleven.ActivityManagerCompatVR;
 
 public class RecentsAnimationControllerCompat {
 
@@ -41,11 +39,6 @@ public class RecentsAnimationControllerCompat {
     }
 
     public ThumbnailData screenshotTask(int taskId) {
-        if (!LawnchairQuickstepCompat.ATLEAST_S) {
-            var compat =  LawnchairQuickstepCompat.getActivityManagerCompat();
-            var data = compat.takeScreenshot(mAnimationController, taskId);
-            return data != null ? new ThumbnailData(data) : new ThumbnailData();
-        }
         try {
             final TaskSnapshot snapshot = mAnimationController.screenshotTask(taskId);
             if (snapshot != null) {
@@ -97,11 +90,16 @@ public class RecentsAnimationControllerCompat {
      * @param sendUserLeaveHint determines whether userLeaveHint will be set true to the previous
      *                          app.
      */
-    public void finish(boolean toHome, boolean sendUserLeaveHint) {
+    public void finish(boolean toHome, boolean sendUserLeaveHint, IResultReceiver finishCb) {
         try {
-            mAnimationController.finish(toHome, sendUserLeaveHint);
+            mAnimationController.finish(toHome, sendUserLeaveHint, finishCb);
         } catch (RemoteException e) {
             Log.e(TAG, "Failed to finish recents animation", e);
+            try {
+                finishCb.send(0, null);
+            } catch (Exception ex) {
+                // Local call, can ignore
+            }
         }
     }
 
@@ -125,7 +123,6 @@ public class RecentsAnimationControllerCompat {
      * @see {{@link IRecentsAnimationController#setWillFinishToHome(boolean)}}.
      */
     public void setWillFinishToHome(boolean willFinishToHome) {
-        if (!LawnchairQuickstepCompat.ATLEAST_R) return;
         try {
             mAnimationController.setWillFinishToHome(willFinishToHome);
         } catch (RemoteException e) {
@@ -149,7 +146,6 @@ public class RecentsAnimationControllerCompat {
      * @see IRecentsAnimationController#detachNavigationBarFromApp
      */
     public void detachNavigationBarFromApp(boolean moveHomeToTop) {
-        if (!LawnchairQuickstepCompat.ATLEAST_S) return;
         try {
             mAnimationController.detachNavigationBarFromApp(moveHomeToTop);
         } catch (RemoteException e) {
@@ -161,7 +157,6 @@ public class RecentsAnimationControllerCompat {
      * @see IRecentsAnimationController#animateNavigationBarToApp(long)
      */
     public void animateNavigationBarToApp(long duration) {
-        if (!LawnchairQuickstepCompat.ATLEAST_S) return;
         try {
             mAnimationController.animateNavigationBarToApp(duration);
         } catch (RemoteException e) {
